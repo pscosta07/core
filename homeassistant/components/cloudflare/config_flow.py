@@ -3,6 +3,11 @@ import logging
 from typing import Any, Dict, Optional
 
 from pycfdns import CloudflareUpdater
+from pycfdns.exceptions import (
+    CloudflareAuthenticationException,
+    CloudflareConnectionException,
+    CloudflareZoneException,
+)
 import voluptuous as vol
 
 from homeassistant.config_entries import CONN_CLASS_CLOUD_PUSH, ConfigFlow
@@ -41,7 +46,11 @@ async def validate_input(hass: HomeAssistant, data: Dict):
 
     try:
         zone_id = await cfupdate.get_zone_id()
-    except Exception as error:  # pylint: disable=broad-except
+    except CloudflareConnectionException as error:
+        raise CannotConnect from error
+    except CloudflareAuthenticationException as error:
+        raise InvalidAuth from error
+    except CloudflareZoneException as error:
         raise InvalidZone from error
 
     return {"title": data[CONF_ZONE]}
@@ -69,6 +78,10 @@ class CloudflareConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 info = await validate_input(self.hass, user_input)
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
             except InvalidZone:
                 errors["base"] = "invalid_zone"
             except Exception:  # pylint: disable=broad-except
@@ -83,5 +96,13 @@ class CloudflareConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
+class CannotConnect(HomeAssistantError):
+    """Error to indicate we cannot connect."""
+
+
+class InvalidAuth(HomeAssistantError):
+    """Error to indicate there is invalid auth."""
+
+
 class InvalidZone(HomeAssistantError):
-    """Error to indicate we cant validate zone exists in account."""
+    """Error to indicate we cannot alidate zone exists in account."""
