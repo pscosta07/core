@@ -1,4 +1,5 @@
 """Test the Cloudflare integration."""
+from pycfdns.exceptions import CloudflareConnectionException
 from homeassistant.components.couldflare.const import CONF_RECORDS, DOMAIN
 from homeassistant.config_entries import (
     ENTRY_STATE_LOADED,
@@ -56,7 +57,7 @@ async def test_async_setup_raises_entry_not_ready(hass):
 
     with patch(
         "homeassistant.components.cloudflare.CloudflareUpdater.get_zone_id",
-        side_effect=Exception(),
+        side_effect=CloudflareConnectionException(),
     ):
         await hass.config_entries.async_setup(config_entry.entry_id)
 
