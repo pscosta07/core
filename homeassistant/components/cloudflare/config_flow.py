@@ -37,7 +37,7 @@ async def validate_input(hass: HomeAssistant, data: Dict):
     Data has the keys from DATA_SCHEMA with values provided by the user.
     """
     cfupdate = CloudflareUpdater(
-        async_get_clientsession(),
+        async_get_clientsession(hass),
         data[CONF_EMAIL],
         data[CONF_API_KEY],
         data[CONF_ZONE],
