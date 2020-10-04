@@ -18,6 +18,8 @@ from homeassistant.setup import async_setup_component
 from . import (
     ENTRY_CONFIG,
     USER_INPUT,
+    USER_INPUT_RECORDS,
+    USER_INPUT_ZONE,
     YAML_CONFIG,
     _get_mock_cfupdate,
     _patch_async_setup,
@@ -65,23 +67,47 @@ async def test_user_form(hass, cfupdate_flow):
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
     )
     assert result["type"] == RESULT_TYPE_FORM
+    assert result["step_id"] == "user"
     assert result["errors"] == {}
 
-    mock_cfupdate = _get_mock_cfupdate()
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        USER_INPUT,
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] == RESULT_TYPE_FORM
+    assert result["step_id"] == "zone"
+    assert result["errors"] == {}
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        USER_INPUT_ZONE,
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] == RESULT_TYPE_FORM
+    assert result["step_id"] == "records"
+    assert result["errors"] == {}
 
     with _patch_async_setup() as mock_setup, _patch_async_setup_entry() as mock_setup_entry:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            USER_INPUT,
+            USER_INPUT_RECORDS,
         )
         await hass.async_block_till_done()
 
     assert result["type"] == RESULT_TYPE_CREATE_ENTRY
-    assert result["title"] == "mock.com"
-    assert result["data"] == {**USER_INPUT}
+    assert result["title"] == USER_INPUT_ZONE[CONF_ZONE]
+
+    assert result["data"]
+    assert result["data"][CONF_EMAIL] == USER_INPUT[CONF_EMAIL]
+    assert result["data"][CONF_API_KEY] == USER_INPUT[CONF_API_KEY]
+    assert result["data"][CONF_ZONE] == USER_INPUT_ZONE[CONF_ZONE]
+    assert result["data"][CONF_RECORDS] == USER_INPUT_RECORDS[CONF_RECORDS]
 
     assert result["result"]
-    assert result["result"].unique_id == "mock.com"
+    assert result["result"].unique_id == USER_INPUT_ZONE[CONF_ZONE]
 
     assert len(mock_setup.mock_calls) == 1
     assert len(mock_setup_entry.mock_calls) == 1
@@ -114,7 +140,6 @@ async def test_user_form_invalid_auth(hass, cfupdate_flow):
     )
 
     instance.get_zones.side_effect = CloudflareAuthenticationException()
-
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         USER_INPUT,
@@ -127,12 +152,12 @@ async def test_user_form_invalid_auth(hass, cfupdate_flow):
 async def test_user_form_invalid_zone(hass, cfupdate_flow):
     """Test we handle invalid zone error."""
     instance = cfupdate_flow.return_value
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
     )
 
     instance.get_zones.side_effect = CloudflareZoneException()
-
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"],
         USER_INPUT,
