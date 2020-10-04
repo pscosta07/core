@@ -12,9 +12,7 @@ from homeassistant.setup import async_setup_component
 from . import (
     ENTRY_CONFIG,
     YAML_CONFIG,
-    _get_mock_cfupdate,
     _patch_async_setup_entry,
-    _patch_get_zone_id,
     init_integration,
 )
 
