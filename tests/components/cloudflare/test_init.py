@@ -21,9 +21,9 @@ from tests.async_mock import patch
 from tests.common import MockConfigEntry
 
 
-async def test_import_from_yaml(hass) -> None:
+async def test_import_from_yaml(hass, cfupdate) -> None:
     """Test import from YAML."""
-    with _patch_get_zone_id(), _patch_async_setup_entry():
+    with _patch_async_setup_entry():
         assert await async_setup_component(hass, DOMAIN, {DOMAIN: YAML_CONFIG})
         await hass.async_block_till_done()
 
