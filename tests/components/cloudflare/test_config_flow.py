@@ -1,4 +1,10 @@
 """Test the Cloudflare config flow."""
+from pycfdns.exceptions import (
+    CloudflareAuthenticationException,
+    CloudflareConnectionException,
+    CloudflareZoneException,
+)
+
 from homeassistant.components.cloudflare.const import DOMAIN
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import CONF_SOURCE
@@ -49,6 +55,44 @@ async def test_user_form(hass):
     assert len(mock_setup_entry.mock_calls) == 1
 
 
+async def test_user_form_cannot(hass):
+    """Test we handle cannot connect error."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={CONF_SOURCE: SOURCE_USER}
+    )
+
+    with patch(
+        "homeassistant.components.cloudflare.CloudflareUpdater.get_zone_id",
+        side_effect=CloudflareConnectionException(),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            USER_INPUT,
+        )
+
+    assert result["type"] == RESULT_TYPE_FORM
+    assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_user_form_invalid auth(hass):
+    """Test we handle invalid auth error."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={CONF_SOURCE: SOURCE_USER}
+    )
+
+    with patch(
+        "homeassistant.components.cloudflare.CloudflareUpdater.get_zone_id",
+        side_effect=CloudflareAuthenticationException(),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            USER_INPUT,
+        )
+
+    assert result["type"] == RESULT_TYPE_FORM
+    assert result["errors"] == {"base": "invalid_auth"}
+
+
 async def test_user_form_invalid zone(hass):
     """Test we handle invalid zone error."""
     result = await hass.config_entries.flow.async_init(
@@ -57,7 +101,7 @@ async def test_user_form_invalid zone(hass):
 
     with patch(
         "homeassistant.components.cloudflare.CloudflareUpdater.get_zone_id",
-        return_value=None,
+        side_effect=CloudflareZoneException(),
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
