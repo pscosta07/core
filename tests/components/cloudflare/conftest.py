@@ -11,6 +11,7 @@ def cfupdate(hass):
     with patch("homeassistant.components.cloudflare.CloudflareUpdater") as mock_api:
         instance = mock_api.return_value
 
+        zone_records = ["ha.mock.com", "homeassistant.mock.com"]
         cf_records = [
             CFRecord(
                 {
@@ -32,6 +33,8 @@ def cfupdate(hass):
             ),
         ]
 
+        instance.get_zones = AsyncMock(return_value=["mock.com"])
+        instance.get_zone_records = AsyncMock(return_value=zone_records)
         instance.get_record_info = AsyncMock(return_value=cf_records)
         instance.get_zone_id = AsyncMock(return_value="mock-zone-id")
         instance.update_records = AsyncMock(return_value=None)
