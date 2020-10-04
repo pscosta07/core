@@ -18,13 +18,42 @@ from homeassistant.setup import async_setup_component
 from . import (
     ENTRY_CONFIG,
     USER_INPUT,
+    YAML_CONFIG,
+    _get_mock_cfupdate,
     _patch_async_setup,
     _patch_async_setup_entry,
-    _patch_get_zone_id,
 )
 
 from tests.async_mock import patch
 from tests.common import MockConfigEntry
+
+
+async def test_form_import(hass):
+    """Test we get the form with import source."""
+    await async_setup_component(hass, "persistent_notification", {})
+
+    mock_cfupdate = _get_mock_cfupdate()
+
+    with patch(
+        "homeassistant.components.cloudflare.CloudflareUpdater",
+        return_value=mock_cfupdate,
+    ), _patch_async_setup() as mock_setup, _patch_async_entry_setup() as mock_setup_entry:
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={CONF_SOURCE: SOURCE_IMPORT},
+            data=YAML_CONFIG,
+        )
+
+    assert result["type"] == RESULT_TYPE_CREATE_ENTRY
+    assert result["title"] == "mock.com"
+    assert result["data"]
+    assert result["data"][CONF_RECORDS] == ["ha.mock.com", "homeassistant.mock.com"]
+
+    assert result["result"]
+    assert result["result"].unique_id == "mock.com"
+
+    assert len(mock_setup.mock_calls) == 1
+    assert len(mock_setup_entry.mock_calls) == 1
 
 
 async def test_user_form(hass):
@@ -37,7 +66,11 @@ async def test_user_form(hass):
     assert result["type"] == RESULT_TYPE_FORM
     assert result["errors"] == {}
 
-    with _patch_get_zone_id(), _patch_async_setup() as mock_setup, _patch_async_setup_entry() as mock_setup_entry:
+    mock_cfupdate = _get_mock_cfupdate()
+
+    with patch(
+        "homeassistant.components.cloudflare.CloudflareUpdater", return_value=mock_cfupdate
+    ), _patch_async_setup() as mock_setup, _patch_async_setup_entry() as mock_setup_entry:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             USER_INPUT,
