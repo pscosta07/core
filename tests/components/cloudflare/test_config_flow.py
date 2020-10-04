@@ -28,16 +28,13 @@ from tests.async_mock import patch
 from tests.common import MockConfigEntry
 
 
-async def test_form_import(hass):
+async def test_form_import(hass, cfupdate_flow):
     """Test we get the form with import source."""
     await async_setup_component(hass, "persistent_notification", {})
 
     mock_cfupdate = _get_mock_cfupdate()
 
-    with patch(
-        "homeassistant.components.cloudflare.config_flow.CloudflareUpdater",
-        return_value=mock_cfupdate,
-    ), _patch_async_setup() as mock_setup, _patch_async_entry_setup() as mock_setup_entry:
+    with _patch_async_setup() as mock_setup, _patch_async_entry_setup() as mock_setup_entry:
         result = await hass.config_entries.flow.async_init(
             DOMAIN,
             context={CONF_SOURCE: SOURCE_IMPORT},
@@ -45,7 +42,7 @@ async def test_form_import(hass):
         )
 
     assert result["type"] == RESULT_TYPE_CREATE_ENTRY
-    assert result["title"] == "mock.com"
+    assert result["title"] == YAML_CONFIG[CONF_ZONE]
 
     assert result["data"]
     assert result["data"][CONF_EMAIL] == YAML_CONFIG[CONF_EMAIL]
@@ -54,13 +51,13 @@ async def test_form_import(hass):
     assert result["data"][CONF_RECORDS] == ["ha.mock.com", "homeassistant.mock.com"]
 
     assert result["result"]
-    assert result["result"].unique_id == "mock.com"
+    assert result["result"].unique_id == YAML_CONFIG[CONF_ZONE]
 
     assert len(mock_setup.mock_calls) == 1
     assert len(mock_setup_entry.mock_calls) == 1
 
 
-async def test_user_form(hass):
+async def test_user_form(hass, cfupdate_flow):
     """Test we get the user initiated form."""
     await async_setup_component(hass, "persistent_notification", {})
 
@@ -72,9 +69,7 @@ async def test_user_form(hass):
 
     mock_cfupdate = _get_mock_cfupdate()
 
-    with patch(
-        "homeassistant.components.cloudflare.CloudflareUpdater", return_value=mock_cfupdate
-    ), _patch_async_setup() as mock_setup, _patch_async_setup_entry() as mock_setup_entry:
+    with _patch_async_setup() as mock_setup, _patch_async_setup_entry() as mock_setup_entry:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             USER_INPUT,
@@ -92,71 +87,69 @@ async def test_user_form(hass):
     assert len(mock_setup_entry.mock_calls) == 1
 
 
-async def test_user_form_cannot_connect(hass):
+async def test_user_form_cannot_connect(hass, cfupdate_flow):
     """Test we handle cannot connect error."""
+    instance = cfupdate_flow.return_value
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
     )
 
-    with patch(
-        "homeassistant.components.cloudflare.CloudflareUpdater.get_zone_id",
-        side_effect=CloudflareConnectionException(),
-    ):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            USER_INPUT,
-        )
+    instance.get_zones.side_effect = CloudflareConnectionException()
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        USER_INPUT,
+    )
 
     assert result["type"] == RESULT_TYPE_FORM
     assert result["errors"] == {"base": "cannot_connect"}
 
 
-async def test_user_form_invalid_auth(hass):
+async def test_user_form_invalid_auth(hass, cfupdate_flow):
     """Test we handle invalid auth error."""
+    instance = cfupdate_flow.return_value
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
     )
 
-    with patch(
-        "homeassistant.components.cloudflare.CloudflareUpdater.get_zone_id",
-        side_effect=CloudflareAuthenticationException(),
-    ):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            USER_INPUT,
-        )
+    instance.get_zones.side_effect = CloudflareAuthenticationException()
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        USER_INPUT,
+    )
 
     assert result["type"] == RESULT_TYPE_FORM
     assert result["errors"] == {"base": "invalid_auth"}
 
 
-async def test_user_form_invalid_zone(hass):
+async def test_user_form_invalid_zone(hass, cfupdate_flow):
     """Test we handle invalid zone error."""
+    instance = cfupdate_flow.return_value
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
     )
 
-    with patch(
-        "homeassistant.components.cloudflare.CloudflareUpdater.get_zone_id",
-        side_effect=CloudflareZoneException(),
-    ):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            USER_INPUT,
-        )
+    instance.get_zones.side_effect = CloudflareZoneException()
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        USER_INPUT,
+    )
 
     assert result["type"] == RESULT_TYPE_FORM
     assert result["errors"] == {"base": "invalid_zone"}
 
 
-async def test_user_form_unexpected_exception(hass):
+async def test_user_form_unexpected_exception(hass, cfupdate_flow):
     """Test we handle unexpected exception."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
     )
 
     with patch(
-        "homeassistant.components.cloudflare.CloudflareUpdater",
+        "homeassistant.components.cloudflare.config_flow.CloudflareUpdater.get_zone_id",
         side_effect=Exception(),
     ):
         result = await hass.config_entries.flow.async_configure(
