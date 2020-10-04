@@ -55,7 +55,7 @@ async def test_user_form(hass):
     assert len(mock_setup_entry.mock_calls) == 1
 
 
-async def test_user_form_cannot(hass):
+async def test_user_form_cannot_connect(hass):
     """Test we handle cannot connect error."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
@@ -74,7 +74,7 @@ async def test_user_form_cannot(hass):
     assert result["errors"] == {"base": "cannot_connect"}
 
 
-async def test_user_form_invalid auth(hass):
+async def test_user_form_invalid_auth(hass):
     """Test we handle invalid auth error."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
@@ -93,7 +93,7 @@ async def test_user_form_invalid auth(hass):
     assert result["errors"] == {"base": "invalid_auth"}
 
 
-async def test_user_form_invalid zone(hass):
+async def test_user_form_invalid_zone(hass):
     """Test we handle invalid zone error."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
