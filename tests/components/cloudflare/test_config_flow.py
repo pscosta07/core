@@ -35,7 +35,7 @@ async def test_form_import(hass):
     mock_cfupdate = _get_mock_cfupdate()
 
     with patch(
-        "homeassistant.components.cloudflare.CloudflareUpdater",
+        "homeassistant.components.cloudflare.config_flow.CloudflareUpdater",
         return_value=mock_cfupdate,
     ), _patch_async_setup() as mock_setup, _patch_async_entry_setup() as mock_setup_entry:
         result = await hass.config_entries.flow.async_init(
@@ -46,7 +46,11 @@ async def test_form_import(hass):
 
     assert result["type"] == RESULT_TYPE_CREATE_ENTRY
     assert result["title"] == "mock.com"
+
     assert result["data"]
+    assert result["data"][CONF_EMAIL] == YAML_CONFIG[CONF_EMAIL]
+    assert result["data"][CONF_API_KEY] == YAML_CONFIG[CONF_API_KEY]
+    assert result["data"][CONF_ZONE] == YAML_CONFIG[CONF_ZONE]
     assert result["data"][CONF_RECORDS] == ["ha.mock.com", "homeassistant.mock.com"]
 
     assert result["result"]
