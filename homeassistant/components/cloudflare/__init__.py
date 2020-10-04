@@ -4,6 +4,10 @@ import logging
 from typing import Dict
 
 from pycfdns import CloudflareUpdater
+from pycfdns.exceptions import (
+    CloudflareAuthenticationException,
+    CloudflareConnectionException,
+)
 import voluptuous as vol
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
@@ -67,7 +71,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         zone_id = await cfupdate.get_zone_id()
-    except Exception as error:
+    except CloudflareAuthenticationException as error:
+        _LOGGER.error("API access forbidden. Please reauthenticate")
+        return False
+    except CloudflareConnectionException as error:
         raise ConfigEntryNotReady from error
 
     async def update_records(now):
