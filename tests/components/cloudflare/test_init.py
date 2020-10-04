@@ -12,6 +12,7 @@ from homeassistant.setup import async_setup_component
 from . import (
     ENTRY_CONFIG,
     YAML_CONFIG,
+    _get_mock_cfupdate,
     _patch_async_setup_entry,
     _patch_get_zone_id,
     init_integration,
@@ -21,9 +22,14 @@ from tests.async_mock import patch
 from tests.common import MockConfigEntry
 
 
-async def test_import_from_yaml(hass, cfupdate) -> None:
+async def test_import_from_yaml(hass) -> None:
     """Test import from YAML."""
-    with _patch_async_setup_entry():
+    mock_cfupdate = _get_mock_cfupdate()
+
+    with patch(
+        "homeassistant.components.cloudflare.config_flow.CloudflareUpdater",
+        return_value=mock_cfupdate,
+    ), _patch_async_setup_entry():
         assert await async_setup_component(hass, DOMAIN, {DOMAIN: YAML_CONFIG})
         await hass.async_block_till_done()
 
