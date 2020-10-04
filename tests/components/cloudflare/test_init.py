@@ -22,14 +22,9 @@ from tests.async_mock import patch
 from tests.common import MockConfigEntry
 
 
-async def test_import_from_yaml(hass) -> None:
+async def test_import_from_yaml(hass, cfupdate_flow)-> None:
     """Test import from YAML."""
-    mock_cfupdate = _get_mock_cfupdate()
-
-    with patch(
-        "homeassistant.components.cloudflare.config_flow.CloudflareUpdater",
-        return_value=mock_cfupdate,
-    ), _patch_async_setup_entry():
+    with _patch_async_setup_entry():
         assert await async_setup_component(hass, DOMAIN, {DOMAIN: YAML_CONFIG})
         await hass.async_block_till_done()
 
@@ -56,15 +51,14 @@ async def test_unload_entry(hass, cfupdate):
     assert not hass.data.get(DOMAIN)
 
 
-async def test_async_setup_raises_entry_not_ready(hass):
+async def test_async_setup_raises_entry_not_ready(hass, cfupdate):
     """Test that it throws ConfigEntryNotReady when exception occurs during setup."""
+    instance = cfupdate.return_value
+
     config_entry = MockConfigEntry(domain=DOMAIN, data=ENTRY_CONFIG)
     config_entry.add_to_hass(hass)
 
-    with patch(
-        "homeassistant.components.cloudflare.CloudflareUpdater.get_zone_id",
-        side_effect=CloudflareConnectionException(),
-    ):
-        await hass.config_entries.async_setup(config_entry.entry_id)
+    instance.get_zone_id.side_effect = CloudflareConnectionException()
+    await hass.config_entries.async_setup(config_entry.entry_id)
 
     assert config_entry.state == ENTRY_STATE_SETUP_RETRY
