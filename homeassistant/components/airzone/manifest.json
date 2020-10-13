@@ -1,0 +1,7 @@
+{
+  "domain": "airzone",
+  "name": "AirZone",
+  "documentation": "https://home-assistant.io/components/airzone/",
+  "dependencies": [],
+  "codeowners": ["@pscosta07"]
+}
