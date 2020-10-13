@@ -651,6 +651,9 @@ omit =
     homeassistant/components/ovo_energy/__init__.py
     homeassistant/components/ovo_energy/const.py
     homeassistant/components/ovo_energy/sensor.py
+    homeassistant/components/ozw/__init__.py
+    homeassistant/components/ozw/entity.py
+    homeassistant/components/ozw/services.py
     homeassistant/components/panasonic_bluray/media_player.py
     homeassistant/components/panasonic_viera/media_player.py
     homeassistant/components/pandora/media_player.py
@@ -779,7 +782,9 @@ omit =
     homeassistant/components/simplepush/notify.py
     homeassistant/components/simplisafe/__init__.py
     homeassistant/components/simplisafe/alarm_control_panel.py
+    homeassistant/components/simplisafe/binary_sensor.py
     homeassistant/components/simplisafe/lock.py
+    homeassistant/components/simplisafe/sensor.py
     homeassistant/components/simulated/sensor.py
     homeassistant/components/sisyphus/*
     homeassistant/components/sky_hub/*
@@ -912,6 +917,7 @@ omit =
     homeassistant/components/torque/sensor.py
     homeassistant/components/totalconnect/*
     homeassistant/components/touchline/climate.py
+    homeassistant/components/tplink/common.py
     homeassistant/components/tplink/switch.py
     homeassistant/components/tplink_lte/*
     homeassistant/components/traccar/device_tracker.py
@@ -996,6 +1002,10 @@ omit =
     homeassistant/components/worldtidesinfo/sensor.py
     homeassistant/components/worxlandroid/sensor.py
     homeassistant/components/x10/light.py
+    homeassistant/components/xbox/__init__.py
+    homeassistant/components/xbox/api.py
+    homeassistant/components/xbox/browse_media.py
+    homeassistant/components/xbox/media_player.py
     homeassistant/components/xbox_live/sensor.py
     homeassistant/components/xeoma/camera.py
     homeassistant/components/xfinity/device_tracker.py
@@ -1050,11 +1060,9 @@ omit =
     homeassistant/components/zhong_hong/climate.py
     homeassistant/components/xbee/*
     homeassistant/components/ziggo_mediabox_xl/media_player.py
+    homeassistant/components/zoneminder/*
     homeassistant/components/supla/*
     homeassistant/components/zwave/util.py
-    homeassistant/components/ozw/__init__.py
-    homeassistant/components/ozw/entity.py
-    homeassistant/components/ozw/services.py
 
 [report]
 # Regexes for lines to exclude from consideration
